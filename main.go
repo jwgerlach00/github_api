@@ -3,10 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"image/color"
 	"io"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/benoitmasson/plotters/piechart"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
 )
 
 const urlStem = "https://api.github.com/users"
@@ -105,6 +110,28 @@ func getLanguages(repo Repo, accessToken string, client *http.Client) map[string
 	return languages
 }
 
+func plotDistribution(data map[string]float64) {
+	var keys []string
+	var values []float64
+	for key, value := range data {
+		keys = append(keys, key)
+		values = append(values, value)
+	}
+
+	p := plot.New()
+	p.HideAxes()
+
+	pie, err := piechart.NewPieChart(plotter.Values(values))
+	if err != nil {
+		log.Fatal(err)
+	}
+	pie.Labels.Nominal = keys
+
+	pie.Color = color.RGBA{200, 100, 100, 255} // red
+	p.Add(pie)
+	p.Save(800, 800, "piechart.png")
+}
+
 func main() {
 	username := "jwgerlach00"
 	accessToken := readAccessToken("access_token.txt")
@@ -117,4 +144,6 @@ func main() {
 	aggregateLanguages := countTotalLanguageBytes(repos, accessToken, client)
 
 	fmt.Println(aggregateLanguages)
+	plotDistribution(aggregateLanguages)
+
 }
