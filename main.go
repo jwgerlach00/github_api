@@ -17,13 +17,15 @@ import (
 const urlStem = "https://api.github.com/users"
 
 type Repo struct {
+	// Important data to decode from JSON received by GET
 	ID           int    `json:"id"`
 	Name         string `json:"name"`
 	LanguagesURL string `json:"languages_url"`
 }
 
-func readAccessToken(filepath string) string {
-	content, err := os.ReadFile(filepath)
+func readAccessToken(txtFilepath string) string {
+	// Loads GitHub personal access token assumed to be written as a string in txtFilepath
+	content, err := os.ReadFile(txtFilepath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,6 +33,7 @@ func readAccessToken(filepath string) string {
 }
 
 func getAuthRequest(url, accessToken string) *http.Request {
+	/// GET request with modified Header to add accessToken. Necessary for using GitHub API without rate limiting
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -40,6 +43,7 @@ func getAuthRequest(url, accessToken string) *http.Request {
 }
 
 func getReposWholeResponse(username, accessToken string, client *http.Client) map[string]interface{} {
+	// GET request to retrieve the entire response object from /repos using GitHub API
 	url := fmt.Sprintf("%s/%s", urlStem, username)
 
 	req := getAuthRequest(url, accessToken)
@@ -61,6 +65,7 @@ func getReposWholeResponse(username, accessToken string, client *http.Client) ma
 }
 
 func getRepos(username, accessToken string, client *http.Client) []Repo {
+	// GET request to retrieve response object according to Repo schema from /repos using GitHub API
 	url := fmt.Sprintf("%s/%s/repos", urlStem, username)
 
 	req := getAuthRequest(url, accessToken)
@@ -82,9 +87,10 @@ func getRepos(username, accessToken string, client *http.Client) []Repo {
 }
 
 func countTotalLanguageBytes(repos []Repo, accessToken string, client *http.Client) map[string]float64 {
+	// Sums bytes for each language. Returns mapping of language to bytes
 	aggregateLanguages := make(map[string]float64)
 	for _, repo := range repos {
-		languages := getLanguages(repo, accessToken, client)
+		languages := getRepoLanguages(repo, accessToken, client)
 		for lang, count := range languages {
 			aggregateLanguages[lang] += count
 		}
@@ -92,7 +98,8 @@ func countTotalLanguageBytes(repos []Repo, accessToken string, client *http.Clie
 	return aggregateLanguages
 }
 
-func getLanguages(repo Repo, accessToken string, client *http.Client) map[string]float64 {
+func getRepoLanguages(repo Repo, accessToken string, client *http.Client) map[string]float64 {
+	// GET request for language-byte mapping for a repo
 	req := getAuthRequest(repo.LanguagesURL, accessToken)
 
 	response, err := client.Do(req)
@@ -111,6 +118,7 @@ func getLanguages(repo Repo, accessToken string, client *http.Client) map[string
 }
 
 func plotDistribution(data map[string]float64) {
+	// Plots language-byte distribution as a PieChart
 	var keys []string
 	var values []float64
 	for key, value := range data {
@@ -147,5 +155,4 @@ func main() {
 
 	fmt.Println(aggregateLanguages)
 	plotDistribution(aggregateLanguages)
-
 }
