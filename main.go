@@ -114,8 +114,10 @@ func plotDistribution(data map[string]float64) {
 	var keys []string
 	var values []float64
 	for key, value := range data {
-		keys = append(keys, key)
-		values = append(values, value)
+		if key != "HTML" && key != "Jupyter Notebook" {
+			keys = append(keys, key)
+			values = append(values, value)
+		}
 	}
 
 	p := plot.New()
