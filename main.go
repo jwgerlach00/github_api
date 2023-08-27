@@ -25,15 +25,19 @@ func readAccessToken(filepath string) string {
 	return string(content)
 }
 
-func getReposWholeResponse(username, accessToken string, client *http.Client) map[string]interface{} {
-	url := fmt.Sprintf("%s/%s", urlStem, username)
-
+func getAuthRequest(url, accessToken string) *http.Request {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	req.Header.Set("Authorization", "Bearer "+accessToken)
+	return req
+}
+
+func getReposWholeResponse(username, accessToken string, client *http.Client) map[string]interface{} {
+	url := fmt.Sprintf("%s/%s", urlStem, username)
+
+	req := getAuthRequest(url, accessToken)
 
 	response, err := client.Do(req)
 	if err != nil {
@@ -51,10 +55,12 @@ func getReposWholeResponse(username, accessToken string, client *http.Client) ma
 	return wholeResponse
 }
 
-func getRepos(username string, client http.Client) []Repo {
+func getRepos(username, accessToken string, client *http.Client) []Repo {
 	url := fmt.Sprintf("%s/%s/repos", urlStem, username)
 
-	response, err := http.Get(url)
+	req := getAuthRequest(url, accessToken)
+
+	response, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -92,11 +98,15 @@ func main() {
 
 	client := &http.Client{}
 
-	getReposWholeResponse(username, accessToken, client)
+	// out := getReposWholeResponse(username, accessToken, client)
+	// fmt.Println(out)
 
-	// repos := getRepos(username)
+	repos := getRepos(username, accessToken, client)
 
-	// fmt.Println(repos[0])
+	for key := range repos {
+		fmt.Println(repos[key]) // array
+	}
+	fmt.Println(len(repos))
 
 	// for i := 0; i < len(repos); i++ {
 	// 	languages := getLanguages(repos[i])
