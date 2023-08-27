@@ -76,14 +76,27 @@ func getRepos(username, accessToken string, client *http.Client) []Repo {
 	return repos
 }
 
-func getLanguages(repo Repo) map[string]interface{} {
-	response, err := http.Get(repo.LanguagesURL)
+func countTotalLanguageBytes(repos []Repo, accessToken string, client *http.Client) map[string]float64 {
+	aggregateLanguages := make(map[string]float64)
+	for _, repo := range repos {
+		languages := getLanguages(repo, accessToken, client)
+		for lang, count := range languages {
+			aggregateLanguages[lang] += count
+		}
+	}
+	return aggregateLanguages
+}
+
+func getLanguages(repo Repo, accessToken string, client *http.Client) map[string]float64 {
+	req := getAuthRequest(repo.LanguagesURL, accessToken)
+
+	response, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer response.Body.Close()
 
-	var languages map[string]interface{}
+	var languages map[string]float64
 	err = json.NewDecoder(response.Body).Decode(&languages)
 	if err != nil {
 		log.Fatal(err)
@@ -98,22 +111,10 @@ func main() {
 
 	client := &http.Client{}
 
-	// out := getReposWholeResponse(username, accessToken, client)
-	// fmt.Println(out)
+	// wholeRes := getReposWholeResponse(username, accessToken, client)
 
 	repos := getRepos(username, accessToken, client)
+	aggregateLanguages := countTotalLanguageBytes(repos, accessToken, client)
 
-	for key := range repos {
-		fmt.Println(repos[key]) // array
-	}
-	fmt.Println(len(repos))
-
-	// for i := 0; i < len(repos); i++ {
-	// 	languages := getLanguages(repos[i])
-	// 	fmt.Println(languages)
-	// 	// for key := range languages {
-	// 	// 	fmt.Println(key)
-	// 	// }
-	// }
-
+	fmt.Println(aggregateLanguages)
 }
