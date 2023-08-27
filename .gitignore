@@ -19,3 +19,6 @@
 
 # Go workspace file
 go.work
+
+# Ignore access token for privacy reasons
+access_token.txt

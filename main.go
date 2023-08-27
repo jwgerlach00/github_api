@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
 const urlStem = "https://api.github.com/users"
@@ -14,6 +15,14 @@ type Repo struct {
 	ID           int    `json:"id"`
 	Name         string `json:"name"`
 	LanguagesURL string `json:"languages_url"`
+}
+
+func readAccessToken(filepath string) string {
+	content, err := os.ReadFile(filepath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return string(content)
 }
 
 func getReposWholeResponse(username string) {
@@ -26,7 +35,7 @@ func getReposWholeResponse(username string) {
 	fmt.Println(string(responseBytes))
 }
 
-func getRepos(username string) []Repo {
+func getRepos(username string, client http.Client) []Repo {
 	url := fmt.Sprintf("%s/%s/repos", urlStem, username)
 
 	response, err := http.Get(url)
@@ -63,7 +72,9 @@ func getLanguages(repo Repo) map[string]interface{} {
 
 func main() {
 	username := "jwgerlach00"
-	// accessToken := ""
+	accessToken := readAccessToken("access_token.txt")
+
+	fmt.Println(accessToken)
 	getReposWholeResponse(username)
 
 	// repos := getRepos(username)
