@@ -25,14 +25,30 @@ func readAccessToken(filepath string) string {
 	return string(content)
 }
 
-func getReposWholeResponse(username string) {
-	url := fmt.Sprintf("%s/%s/repos", urlStem, username)
-	response, err := http.Get(url)
+func getReposWholeResponse(username, accessToken string, client *http.Client) map[string]interface{} {
+	url := fmt.Sprintf("%s/%s", urlStem, username)
+
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	response, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer response.Body.Close()
+
 	responseBytes, err := io.ReadAll(response.Body)
-	fmt.Println(string(responseBytes))
+	var wholeResponse map[string]interface{}
+	err = json.Unmarshal(responseBytes, &wholeResponse)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return wholeResponse
 }
 
 func getRepos(username string, client http.Client) []Repo {
@@ -74,8 +90,9 @@ func main() {
 	username := "jwgerlach00"
 	accessToken := readAccessToken("access_token.txt")
 
-	fmt.Println(accessToken)
-	getReposWholeResponse(username)
+	client := &http.Client{}
+
+	getReposWholeResponse(username, accessToken, client)
 
 	// repos := getRepos(username)
 
